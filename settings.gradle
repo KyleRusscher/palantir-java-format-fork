@@ -1,0 +1,27 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath 'com.palantir.gradle.jdks:gradle-jdks-settings:0.69.0'
+    }
+}
+apply plugin: 'com.palantir.jdks.settings'
+rootProject.name = 'palantir-java-format-parent'
+
+include ':gradle-palantir-java-format'
+include ':eclipse_plugin'
+include ':idea-plugin'
+include ':palantir-java-format-spi'
+include ':palantir-java-format'
+include ':palantir-java-format-jdk-bootstrap'
+include ':palantir-java-format-benchmarks'
+include ':palantir-java-format-native'
+
+boolean isCiServer = System.getenv().containsKey('CI')
+buildCache {
+    local {
+        enabled = !isCiServer
+    }
+}

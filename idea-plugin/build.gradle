@@ -1,0 +1,77 @@
+/*
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'java'
+apply plugin: 'com.palantir.external-publish-intellij'
+
+def name = "palantir-java-format"
+intellij {
+    pluginName = name
+    updateSinceUntilBuild = true
+    version = "2024.1"
+    plugins = ['java']
+}
+
+patchPluginXml {
+    pluginDescription = "Formats source code using the palantir-java-format tool."
+    sinceBuild = '241' // TODO: keep the intellij version & sinceBuild in sync
+    untilBuild = ''
+}
+
+configurations {
+    formatter {
+        description = 'The default implementation of palantir-java-format, used if the user doesn\'t specify an explicit classpath.'
+
+        canBeConsumed = false
+        canBeResolved = true
+    }
+}
+
+// This task will resolve runtimeClasspath without telling Gradle that it depends on it, therefore dependent jars won't
+// be created beforehand. Therefore, ensure that it knows about it.
+// see https://github.com/JetBrains/gradle-intellij-plugin/blob/master/src/main/groovy/org/jetbrains/intellij/tasks/PrepareSandboxTask.groovy
+tasks.withType(org.jetbrains.intellij.tasks.PrepareSandboxTask).configureEach {
+    dependsOn configurations.runtimeClasspath
+
+    // Also pack the formatter in its own directory
+    into("${name}/impl") {
+        // Note that we don't filter down the jars in the impl directory due to behavior when
+        // the formatter is bootstrapped with jdk16+ exports.
+        from configurations.formatter
+    }
+}
+
+dependencies {
+    implementation project(':palantir-java-format-jdk-bootstrap')
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+    implementation('com.palantir.sls.versions:sls-versions') {
+        // Has class version conflicts with slf4j brought in by Intellij
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    implementation 'com.palantir.gradle.utils:platform'
+
+    formatter project(':palantir-java-format')
+
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.junit.platform:junit-platform-launcher'
+    implementation 'com.google.code.findbugs:jsr305'
+}
+
+// Javadoc fails if there are no public classes to javadoc, so make it stop complaining.
+tasks.named("javadoc", Javadoc) {
+    failOnError = false
+}

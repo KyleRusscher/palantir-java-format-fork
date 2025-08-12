@@ -1,0 +1,88 @@
+.App code {
+    white-space: pre; font-family: monospace; line-height: 1em;
+}
+
+/* TreeDoc */
+
+.TreeDoc .doc-level {
+    margin-left: 20px;
+}
+
+.TreeDoc {
+    width: 1600px;
+}
+
+.TreeDoc .doc-level {
+    outline: 1px dotted lightgrey;
+}
+
+.TreeDoc .doc-level:hover {
+    outline: 1px solid grey;
+}
+
+.TreeDoc .doc-level:hover > .highlight {
+    background-color: hsl(120, 61%, 80%);
+}
+
+.TreeDoc .doc-break {
+    background: hsl(0, 60%, 90%);
+}
+
+/** these are breaks being referenced by a conditional indent when you hover over it */
+.TreeDoc .doc-break.referenced {
+    background: hsl(60, 100%, 78%);
+}
+
+.TreeDoc .banner {
+    background-color: rgba(138, 155, 168, 0.15);
+}
+
+/* Collapse empty level banner */
+.TreeDoc .banner:empty {
+    display: none;
+}
+
+/* Ops */
+
+.Ops span.token:hover {
+    outline: 1px solid black;
+}
+
+.Ops span.token:hover span.tokenBody {
+    text-decoration: underline;
+}
+
+.Ops span.open-op, .Ops span.close-op, .Ops span.break {
+    position: relative;
+    width: 3px;
+    height: 1em;
+    display: inline-block;
+    margin: 0 1px;
+}
+
+.Ops span.open-op {
+    background: green;
+}
+
+.Ops span.close-op {
+    background: red;
+}
+
+.Ops span.break.FillMode-UNIFIED {
+    background: #777;
+}
+
+.Ops span.break.FillMode-INDEPENDENT {
+    background: #333;
+}
+
+.Ops span.break.FillMode-FORCED {
+    background: #000;
+    width: 5px;
+}
+
+.Ops span.break.conditional {
+    height: 0.4em;
+    width: 0.4em;
+    vertical-align: middle;
+}

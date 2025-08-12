@@ -1,0 +1,165 @@
+apply plugin: 'application'
+apply plugin: 'com.palantir.external-publish-jar'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+mainClassName = 'com.palantir.javaformat.java.Main'
+
+description = 'Palantir Java Format'
+
+dependencies {
+    api project(':palantir-java-format-spi')
+    api 'com.google.guava:guava'
+    implementation 'org.functionaljava:functionaljava'
+    implementation 'com.fasterxml.jackson.core:jackson-core'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8'
+    implementation 'com.fasterxml.jackson.module:jackson-module-parameter-names'
+
+    testImplementation 'com.google.guava:guava-testlib'
+    testImplementation 'com.google.truth:truth'
+    testImplementation 'com.google.testing.compile:compile-testing'
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.junit.jupiter:junit-jupiter-migrationsupport'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    compileOnly 'com.google.auto.service:auto-service'
+    annotationProcessor 'com.google.auto.service:auto-service'
+    compileOnly "org.immutables:value::annotations"
+    annotationProcessor "org.immutables:value"
+
+    compileOnly 'org.derive4j:derive4j-annotation'
+    annotationProcessor 'org.derive4j:derive4j'
+    implementation 'com.google.code.findbugs:jsr305'
+}
+
+moduleJvmArgs {
+    exports().addAll(
+            'jdk.compiler/com.sun.tools.javac.file',
+            'jdk.compiler/com.sun.tools.javac.main',
+            'jdk.compiler/com.sun.tools.javac.parser',
+            'jdk.compiler/com.sun.tools.javac.tree',
+            'jdk.compiler/com.sun.tools.javac.util',
+            'jdk.compiler/com.sun.tools.javac.code',
+            'jdk.compiler/com.sun.tools.javac.api')
+}
+
+tasks.withType(JavaCompile).named('compileJava') {
+    // By setting the source and target compatibility to 11, while still using a higher level
+    // JDK for compilation, we can compile against the AST classes we need to support >11 source
+    // features but still run on 11 JDKs (with the addition of checking the java version at runtime
+    // and dynamically loading the correct formatter implementation)
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+// false positives due to org.junit.runners.* in the test cases
+tasks.named("checkJUnitDependencies") {
+    enabled = false
+}
+
+tasks.named("test") {
+    // Run all classes and tests in parallel
+    // https://junit.org/junit5/docs/current/user-guide/#writing-tests-parallel-execution
+    systemProperty 'junit.jupiter.execution.parallel.mode.default', 'concurrent'
+}
+
+javaVersion {
+    target = 21
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = 'palantir-java-format-fork'
+            pom {
+                name = 'Palantir Java Format Fork'
+                description = 'A fork of palantir-java-format, published under io.github.KyleRusscher'
+                url = 'https://github.com/KyleRusscher/palantir-java-format-fork'
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'kylerusscher'
+                        name = 'Kyle Russcher'
+                        url = 'https://github.com/KyleRusscher'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:https://github.com/KyleRusscher/palantir-java-format-fork.git'
+                    developerConnection = 'scm:git:ssh://git@github.com:KyleRusscher/palantir-java-format-fork.git'
+                    url = 'https://github.com/KyleRusscher/palantir-java-format-fork'
+                }
+                withXml {
+                    def root = asNode()
+                    // Ensure name/description/url values are exactly as desired
+                    def nameNode = root.get('name')
+                    if (nameNode) {
+                        root.remove(nameNode)
+                    }
+                    root.appendNode('name', 'Palantir Java Format Fork')
+                    def descNode = root.get('description')
+                    if (descNode) {
+                        root.remove(descNode)
+                    }
+                    root.appendNode('description', 'A fork of palantir-java-format, published under io.github.KyleRusscher')
+                    def urlNode = root.get('url')
+                    if (urlNode) {
+                        root.remove(urlNode)
+                    }
+                    root.appendNode('url', 'https://github.com/KyleRusscher/palantir-java-format-fork')
+                    def dist = root.appendNode('distributionManagement')
+                    def snapshotRepo = dist.appendNode('snapshotRepository')
+                    snapshotRepo.appendNode('id', 'ossrh')
+                    snapshotRepo.appendNode('url', 'https://s01.oss.sonatype.org/content/repositories/snapshots')
+                    def repo = dist.appendNode('repository')
+                    repo.appendNode('id', 'ossrh')
+                    repo.appendNode('url', 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/')
+                    // Remove unintended optional dependency on the aggregator/parent if present
+                    def deps = root.get('dependencies')
+                    if (deps) {
+                        deps.each { depNode ->
+                            depNode.children().findAll { it.name() == 'dependency' && it.get('artifactId')?.text() == 'palantir-java-format-parent' }.each { bad ->
+                                depNode.remove(bad)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'OSSRH'
+            def releasesRepoUrl = uri('https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/')
+            def snapshotsRepoUrl = uri('https://s01.oss.sonatype.org/content/repositories/snapshots')
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = findProperty('ossrhUsername') ?: System.getenv('OSSRH_USERNAME')
+                password = findProperty('ossrhPassword') ?: System.getenv('OSSRH_PASSWORD')
+            }
+        }
+    }
+}
+
+signing {
+    // Prefer in-memory keys if provided; otherwise fall back to default gpg setup
+    def signingKey = findProperty('signing.key') ?: System.getenv('SIGNING_KEY')
+    def signingPassphrase = findProperty('signing.password') ?: System.getenv('SIGNING_PASSPHRASE')
+    if (signingKey && signingPassphrase) {
+        useInMemoryPgpKeys(signingKey, signingPassphrase)
+    }
+    required { gradle.taskGraph.hasTask(':palantir-java-format:publish') || gradle.taskGraph.hasTask('publish') }
+    sign publishing.publications.mavenJava
+}

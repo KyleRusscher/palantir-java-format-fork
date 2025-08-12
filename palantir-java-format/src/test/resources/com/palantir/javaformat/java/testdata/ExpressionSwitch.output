@@ -1,0 +1,68 @@
+class ExpressionSwitch {
+    boolean odd(int x) {
+        return switch (x) {
+            case 0 -> true;
+            case 1 -> false;
+            default -> {
+                int y = x - 1;
+                return odd(y);
+            }
+        };
+    }
+
+    int yield(int i) {
+        return switch (i) {
+            case 0:
+                yield 0;
+            default:
+                yield n / i;
+        };
+    }
+
+    int assignment(int j) {
+        boolean val =
+                switch (j) {
+                    case 0 -> true;
+                    case 1 -> false;
+                    default -> false;
+                };
+        return val;
+    }
+
+    int wrapping(Wrapping w) {
+        switch (w) {
+            case THIS_IS_A_VERY_LONG_ENUM_VALUE_ONE,
+                    THIS_IS_A_VERY_LONG_ENUM_VALUE_TWO,
+                    THIS_IS_A_VERY_LONG_ENUM_VALUE_THREE -> {}
+        }
+
+        switch (w) {
+            case CASE_A, CASE_B, CASE_C -> {}
+        }
+    }
+
+    Supplier<Integer> lambda(int k) {
+        return () -> switch (k) {
+            case 0 -> true;
+            default -> false;
+        };
+    }
+
+    public void test1(int y) {
+        int x =
+                switch (y) {
+                    case 1 -> 1;
+                    case 2 -> throw new IllegalArgumentException();
+                    default -> throw new IllegalStateException();
+                };
+    }
+
+    public void test2(int y) {
+        int x;
+        x = switch (y) {
+            case 1 -> 1;
+            case 2 -> throw new IllegalArgumentException();
+            default -> throw new IllegalStateException();
+        };
+    }
+}

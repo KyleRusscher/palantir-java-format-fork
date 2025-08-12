@@ -1,0 +1,206 @@
+/*
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.palantir.javaformat.intellij;
+
+import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.Storage;
+import com.intellij.openapi.project.Project;
+import com.palantir.javaformat.java.FormatterService;
+import com.palantir.javaformat.java.JavaFormatterOptions;
+import com.palantir.sls.versions.OrderableSlsVersion;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.URI;
+import java.util.List;
+import java.util.Optional;
+import java.util.jar.JarFile;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.annotation.Nullable;
+
+@SuppressWarnings("for-rollout:SameNameButDifferent")
+@State(
+        name = "PalantirJavaFormatSettings",
+        storages = {@Storage("palantir-java-format.xml")})
+public class PalantirJavaFormatSettings implements PersistentStateComponent<PalantirJavaFormatSettings.State> {
+
+    @SuppressWarnings("for-rollout:SameNameButDifferent")
+    private State state = new State();
+
+    static PalantirJavaFormatSettings getInstance(Project project) {
+        return project.getService(PalantirJavaFormatSettings.class);
+    }
+
+    @SuppressWarnings("for-rollout:SameNameButDifferent")
+    @Nullable
+    @Override
+    public State getState() {
+        return state;
+    }
+
+    @Override
+    public void loadState(@SuppressWarnings("for-rollout:SameNameButDifferent") State state) {
+        this.state = state;
+    }
+
+    boolean isEnabled() {
+        return state.enabled.equals(EnabledState.ENABLED);
+    }
+
+    void setEnabled(boolean enabled) {
+        setEnabled(enabled ? EnabledState.ENABLED : EnabledState.DISABLED);
+    }
+
+    void setEnabled(EnabledState enabled) {
+        state.enabled = enabled;
+    }
+
+    boolean isUninitialized() {
+        return state.enabled.equals(EnabledState.UNKNOWN);
+    }
+
+    JavaFormatterOptions.Style getStyle() {
+        return state.style;
+    }
+
+    void setStyle(JavaFormatterOptions.Style style) {
+        state.style = style;
+    }
+
+    /**
+     * The paths to jars that provide an alternative implementation of the formatter. If set, this implementation will
+     * be used instead of the bundled version.
+     */
+    Optional<List<URI>> getImplementationClassPath() {
+        return state.implementationClassPath;
+    }
+
+    /**
+     * The path to the formatter nativeImage.
+     */
+    Optional<URI> getNativeImageClassPath() {
+        return state.nativeImageClassPath;
+    }
+
+    boolean injectedVersionIsOutdated() {
+        Optional<String> formatterVersion = computeFormatterVersion();
+        Optional<OrderableSlsVersion> implementationVersion = OrderableSlsVersion.safeValueOf(
+                getImplementationVersion().map(v -> v.replace(".dirty", "")).orElse(""));
+
+        if (formatterVersion.isEmpty() || implementationVersion.isEmpty()) {
+            return true;
+        }
+
+        OrderableSlsVersion injectedVersion = OrderableSlsVersion.valueOf(formatterVersion.get());
+        return injectedVersion.compareTo(implementationVersion.get()) < 0;
+    }
+
+    Optional<String> getImplementationVersion() {
+        return Optional.ofNullable(FormatterProvider.getPluginDescriptor().getVersion());
+    }
+
+    Optional<String> computeFormatterVersion() {
+        return getImplementationClassPath().map(classpath -> classpath.stream()
+                .flatMap(uri -> {
+                    try {
+                        JarFile jar = new JarFile(uri.getPath());
+                        // Identify the implementation jar by the service it produces.
+                        if (jar.getEntry("META-INF/services/" + FormatterService.class.getName()) != null) {
+                            String implementationVersion =
+                                    jar.getManifest().getMainAttributes().getValue("Implementation-Version");
+                            return Stream.of(implementationVersion);
+                        }
+                        return Stream.empty();
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                })
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Couldn't find implementation JAR")));
+    }
+
+    enum EnabledState {
+        UNKNOWN,
+        ENABLED,
+        DISABLED
+    }
+
+    static class State {
+
+        private EnabledState enabled = EnabledState.UNKNOWN;
+        private Optional<List<URI>> implementationClassPath = Optional.empty();
+        private Optional<URI> nativeImageClassPath = Optional.empty();
+
+        public JavaFormatterOptions.Style style = JavaFormatterOptions.Style.PALANTIR;
+
+        public void setImplementationClassPath(@Nullable List<String> value) {
+            implementationClassPath = Optional.ofNullable(value)
+                    .map(strings -> strings.stream().map(URI::create).collect(Collectors.toList()));
+        }
+
+        @SuppressWarnings("for-rollout:NullAway")
+        public List<String> getImplementationClassPath() {
+            return implementationClassPath
+                    .map(paths -> paths.stream().map(URI::toString).collect(Collectors.toList()))
+                    .orElse(null);
+        }
+
+        public void setNativeImageClassPath(@Nullable String value) {
+            nativeImageClassPath = Optional.ofNullable(value).map(URI::create);
+        }
+
+        @SuppressWarnings("for-rollout:NullAway")
+        public String getNativeImageClassPath() {
+            return nativeImageClassPath.map(URI::toString).orElse(null);
+        }
+
+        // enabled used to be a boolean so we use bean property methods for backwards compatibility
+        public void setEnabled(@Nullable String enabledStr) {
+            if (enabledStr == null) {
+                enabled = EnabledState.UNKNOWN;
+            } else if (Boolean.valueOf(enabledStr)) {
+                enabled = EnabledState.ENABLED;
+            } else {
+                enabled = EnabledState.DISABLED;
+            }
+        }
+
+        @SuppressWarnings("for-rollout:NullAway")
+        public String getEnabled() {
+            return switch (enabled) {
+                case ENABLED -> "true";
+                case DISABLED -> "false";
+                default -> null;
+            };
+        }
+
+        @Override
+        public String toString() {
+            return "PalantirJavaFormatSettings{"
+                    + "enabled="
+                    + enabled
+                    + ", implementationClassPath="
+                    + implementationClassPath
+                    + ", nativeImageClassPath="
+                    + nativeImageClassPath
+                    + ", style="
+                    + style
+                    + '}';
+        }
+    }
+}
