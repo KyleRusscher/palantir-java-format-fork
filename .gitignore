@@ -61,3 +61,5 @@ node_modules/
 
 # Gradle JDKs setup
 !gradle/*
+
+*.sh
