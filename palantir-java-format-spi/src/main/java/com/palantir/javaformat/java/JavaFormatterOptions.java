@@ -30,7 +30,7 @@ public final class JavaFormatterOptions {
 
     public enum Style {
         /** The default Palantir Java Style configuration. */
-        PALANTIR(2, 120),
+        PALANTIR(2, 140),
 
         /** The default Google Java Style configuration. */
         GOOGLE(1, 100),

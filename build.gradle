@@ -36,7 +36,7 @@ apply plugin: 'com.palantir.consistent-versions'
 apply plugin: 'com.palantir.baseline-java-versions'
 
 // Pin a fixed semantic version for OSSRH publishing of this fork
-version = '1.0.0'
+version = '1.0.2'
 
 allprojects {
     apply plugin: 'com.palantir.baseline-null-away'

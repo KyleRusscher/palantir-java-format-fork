@@ -157,7 +157,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
      * readability of builder chains, but also in general to prevent hard to spot extra actions at the end of a method
      * chain.
      */
-    private static final int METHOD_CHAIN_COLUMN_LIMIT = 80;
+    private static final int METHOD_CHAIN_COLUMN_LIMIT = 140;
 
     /** Direction for Annotations (usually VERTICAL). */
     protected enum Direction {
