@@ -42,8 +42,8 @@ allprojects {
     apply plugin: 'com.palantir.baseline-null-away'
     apply plugin: 'com.palantir.java-format'
     apply plugin: 'com.palantir.jakarta-package-alignment'
-    // Publish under the io.github GitHub namespace for the fork
-    group = 'io.github.KyleRusscher'
+    // Publish under the io.github GitHub namespace for the fork (lowercase verified)
+    group = 'io.github.kylerusscher'
     version = rootProject.version
 
     repositories {
