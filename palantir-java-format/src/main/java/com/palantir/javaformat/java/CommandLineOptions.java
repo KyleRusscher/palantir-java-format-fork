@@ -45,6 +45,7 @@ final class CommandLineOptions {
     private final Optional<String> assumeFilename;
     private final boolean reflowLongStrings;
     private final boolean outputReplacements;
+    private final Optional<Integer> maxLineLength;
 
     CommandLineOptions(
             ImmutableList<String> files,
@@ -65,7 +66,8 @@ final class CommandLineOptions {
             boolean setExitIfChanged,
             Optional<String> assumeFilename,
             boolean reflowLongStrings,
-            boolean outputReplacements) {
+            boolean outputReplacements,
+            Optional<Integer> maxLineLength) {
         this.files = files;
         this.inPlace = inPlace;
         this.lines = lines;
@@ -85,6 +87,7 @@ final class CommandLineOptions {
         this.assumeFilename = assumeFilename;
         this.reflowLongStrings = reflowLongStrings;
         this.outputReplacements = outputReplacements;
+        this.maxLineLength = maxLineLength;
     }
 
     /** The files to format. */
@@ -185,6 +188,10 @@ final class CommandLineOptions {
         return outputReplacements;
     }
 
+    Optional<Integer> maxLineLength() {
+        return maxLineLength;
+    }
+
     static Builder builder() {
         return new Builder();
     }
@@ -210,6 +217,7 @@ final class CommandLineOptions {
         private Optional<String> assumeFilename = Optional.empty();
         private boolean reflowLongStrings = true;
         private boolean outputReplacements = false;
+        private Optional<Integer> maxLineLength = Optional.empty();
 
         private Builder() {}
 
@@ -305,6 +313,11 @@ final class CommandLineOptions {
             return this;
         }
 
+        Builder maxLineLength(Integer maxLineLength) {
+            this.maxLineLength = Optional.ofNullable(maxLineLength);
+            return this;
+        }
+
         CommandLineOptions build() {
             Preconditions.checkArgument(!aosp || !palantirStyle, "Cannot use both aosp and palantir style");
             return new CommandLineOptions(
@@ -326,7 +339,8 @@ final class CommandLineOptions {
                     setExitIfChanged,
                     assumeFilename,
                     reflowLongStrings,
-                    outputReplacements);
+                    outputReplacements,
+                    maxLineLength);
         }
     }
 }

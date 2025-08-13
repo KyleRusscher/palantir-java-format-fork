@@ -69,6 +69,8 @@ final class UsageException extends Exception {
         "    Print the version.",
         "  --output-replacements, -output-replacements",
         "    Outputs formatting replacements instead of the full formatted file.",
+        "  --max-line-length, -max-line-length",
+        "    Override the default maximum line length used by the formatter.",
         "  @<filename>",
         "    Read options and filenames from file.",
         "",

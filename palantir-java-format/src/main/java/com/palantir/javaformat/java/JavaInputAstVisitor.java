@@ -30,9 +30,7 @@ import static com.palantir.javaformat.java.Trees.operatorName;
 import static com.palantir.javaformat.java.Trees.precedence;
 import static com.palantir.javaformat.java.Trees.skipParen;
 import static com.sun.source.tree.Tree.Kind.ANNOTATION;
-import static com.sun.source.tree.Tree.Kind.BLOCK;
 import static com.sun.source.tree.Tree.Kind.EXTENDS_WILDCARD;
-import static com.sun.source.tree.Tree.Kind.METHOD_INVOCATION;
 import static com.sun.source.tree.Tree.Kind.STRING_LITERAL;
 import static java.util.stream.Collectors.toList;
 
@@ -157,7 +155,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
      * readability of builder chains, but also in general to prevent hard to spot extra actions at the end of a method
      * chain.
      */
-    private static final int METHOD_CHAIN_COLUMN_LIMIT = 140;
+    private static final int METHOD_CHAIN_COLUMN_LIMIT = 100;
 
     /** Direction for Annotations (usually VERTICAL). */
     protected enum Direction {
@@ -383,7 +381,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
         return null;
     }
 
-    protected void handleModule(boolean first, CompilationUnitTree node) {}
+    protected void handleModule(boolean first, CompilationUnitTree node) {
+    }
 
     /** Skips over extra semi-colons at the top-level, or in a class member declaration lists. */
     protected void dropEmptyDeclarations() {
@@ -1606,12 +1605,12 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
     private static List<Long> handleStream(List<ExpressionTree> parts) {
         return indexes(parts.stream(), p -> {
-                    if (!(p instanceof MethodInvocationTree)) {
-                        return false;
-                    }
-                    Name name = getMethodName((MethodInvocationTree) p);
-                    return Stream.of("stream", "parallelStream", "toBuilder").anyMatch(name::contentEquals);
-                })
+            if (!(p instanceof MethodInvocationTree)) {
+                return false;
+            }
+            Name name = getMethodName((MethodInvocationTree) p);
+            return Stream.of("stream", "parallelStream", "toBuilder").anyMatch(name::contentEquals);
+        })
                 .collect(toList());
     }
 
@@ -2470,8 +2469,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
                 markForPartialFormat();
                 builder.blankLineWanted(
                         previousDirective
-                                        .map(k -> !k.equals(directiveTree.getKind()))
-                                        .orElse(false)
+                                .map(k -> !k.equals(directiveTree.getKind()))
+                                .orElse(false)
                                 ? BlankLineWanted.YES
                                 : BlankLineWanted.NO);
                 builder.forcedBreak();
@@ -3420,8 +3419,8 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
 
         builder.open(
                 kind == DeclarationKind.PARAMETER
-                                && (modifiers.isPresent()
-                                        && !modifiers.get().getAnnotations().isEmpty())
+                        && (modifiers.isPresent()
+                        && !modifiers.get().getAnnotations().isEmpty())
                         ? plusFour
                         : ZERO);
         {
@@ -3771,7 +3770,7 @@ public class JavaInputAstVisitor extends TreePathScanner<Void, Void> {
             }
         }
         return markerAnnotations <= 1
-                        && markerAnnotations == modifiers.getAnnotations().size()
+                && markerAnnotations == modifiers.getAnnotations().size()
                 ? Direction.HORIZONTAL
                 : Direction.VERTICAL;
     }

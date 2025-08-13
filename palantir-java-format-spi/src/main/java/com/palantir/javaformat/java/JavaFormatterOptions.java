@@ -30,7 +30,7 @@ public final class JavaFormatterOptions {
 
     public enum Style {
         /** The default Palantir Java Style configuration. */
-        PALANTIR(2, 140),
+        PALANTIR(2, 120),
 
         /** The default Google Java Style configuration. */
         GOOGLE(1, 100),
@@ -59,9 +59,13 @@ public final class JavaFormatterOptions {
 
     private final boolean formatJavadoc;
 
-    private JavaFormatterOptions(Style style, boolean formatJavadoc) {
+    /** Optional override for the maximum line length. If null, the style default is used. */
+    private final Integer maxLineLengthOverride;
+
+    private JavaFormatterOptions(Style style, boolean formatJavadoc, Integer maxLineLengthOverride) {
         this.style = style;
         this.formatJavadoc = formatJavadoc;
+        this.maxLineLengthOverride = maxLineLengthOverride;
     }
 
     /** Returns the multiplier for the unit of indent. */
@@ -70,7 +74,7 @@ public final class JavaFormatterOptions {
     }
 
     public int maxLineLength() {
-        return style.maxLineLength();
+        return maxLineLengthOverride != null ? maxLineLengthOverride.intValue() : style.maxLineLength();
     }
 
     public boolean formatJavadoc() {
@@ -99,7 +103,10 @@ public final class JavaFormatterOptions {
 
         private boolean formatJavadoc = false;
 
-        private Builder() {}
+        private Integer maxLineLengthOverride = null;
+
+        private Builder() {
+        }
 
         public Builder style(Style style) {
             this.style = style;
@@ -111,8 +118,16 @@ public final class JavaFormatterOptions {
             return this;
         }
 
+        /**
+         * Overrides the maximum line length used by the formatter. If not set, the style default is used.
+         */
+        public Builder maxLineLength(int maxLineLength) {
+            this.maxLineLengthOverride = maxLineLength;
+            return this;
+        }
+
         public JavaFormatterOptions build() {
-            return new JavaFormatterOptions(style, formatJavadoc);
+            return new JavaFormatterOptions(style, formatJavadoc, maxLineLengthOverride);
         }
     }
 }

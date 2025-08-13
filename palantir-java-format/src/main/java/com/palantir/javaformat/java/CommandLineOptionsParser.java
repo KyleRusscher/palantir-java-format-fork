@@ -138,6 +138,10 @@ final class CommandLineOptionsParser {
                 case "--output-replacements":
                     optionsBuilder.outputReplacements(true);
                     break;
+                case "--max-line-length":
+                case "-max-line-length":
+                    optionsBuilder.maxLineLength(parseInteger(it, flag, value));
+                    break;
                 default:
                     throw new IllegalArgumentException("unexpected flag: " + flag);
             }

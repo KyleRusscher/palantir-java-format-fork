@@ -10,8 +10,8 @@
 set -euo pipefail
 
 # Configurable inputs
-VERSION=${VERSION:-2.50.1}                 # override: VERSION=1.0.2 ./createZip.sh
-PREV_VERSION=${PREV_VERSION:-2.50.1}       # fallback POM/JAR version if 1.0.x not found in m2
+VERSION=${VERSION:-2.50.4}                 # override: VERSION=1.0.2 ./createZip.sh
+PREV_VERSION=${PREV_VERSION:-2.50.4}       # fallback POM/JAR version if 1.0.x not found in m2
 KEY=${KEY:-F1118FE9FE02929D2C79CF16AB9C5855AB7411DF}
 PASSPHRASE=${PASSPHRASE:-''}
 NAMESPACE_PATH=io/github/kylerusscher

@@ -97,9 +97,10 @@ public final class Main {
         }
 
         // TODO(someone): update this to always use Style.PALANTIR
-        JavaFormatterOptions options = JavaFormatterOptions.builder()
-                .style(parameters.aosp() ? Style.AOSP : parameters.palantirStyle() ? Style.PALANTIR : Style.GOOGLE)
-                .build();
+        JavaFormatterOptions.Builder optionsBuilder = JavaFormatterOptions.builder()
+                .style(parameters.aosp() ? Style.AOSP : parameters.palantirStyle() ? Style.PALANTIR : Style.GOOGLE);
+        parameters.maxLineLength().ifPresent(optionsBuilder::maxLineLength);
+        JavaFormatterOptions options = optionsBuilder.build();
 
         if (parameters.stdin()) {
             return formatStdin(parameters, options);
